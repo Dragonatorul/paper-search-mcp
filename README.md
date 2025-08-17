@@ -53,9 +53,34 @@ To install paper-search-mcp for Claude Desktop automatically via [Smithery](http
 npx -y @smithery/cli install @openags/paper-search-mcp --client claude
 ```
 
-### Quick Start
+### Quick Start with Docker (Recommended)
 
-For users who want to quickly run the server:
+The easiest way to run the server is using Docker:
+
+1. **Configure Claude Desktop** with Docker:
+   Add this configuration to `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+   ```json
+   {
+     "mcpServers": {
+       "paper-search": {
+         "command": "docker",
+         "args": [
+           "run",
+           "-i",
+           "--rm",
+           "ghcr.io/dragonatorul/paper-search-mcp:latest"
+         ],
+         "env": {
+           "SEMANTIC_SCHOLAR_API_KEY": "" // Optional: For enhanced Semantic Scholar features
+         }
+       }
+     }
+   }
+   ```
+
+### Quick Start with Python
+
+For users who want to run the server directly with Python:
 
 1. **Install Package**:
 
@@ -64,7 +89,6 @@ For users who want to quickly run the server:
    ```
 
 2. **Configure Claude Desktop**:
-   Add this configuration to `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
    ```json
    {
      "mcpServers": {
