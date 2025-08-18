@@ -73,8 +73,8 @@ jobs:
       - name: Test Docker image
         run: |
           # Test that the container starts and responds
-          timeout 10s docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest || true
+          timeout 10s docker run --rm ${REGISTRY}/${{ github.repository_owner }}/${{ github.event.repository.name || github.repository }}:latest || true
           
           # Test that the help message is available
           echo '{"method": "tools/list", "params": {}}' | \
-            timeout 5s docker run --rm -i ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest || true
+            timeout 5s docker run --rm -i ${REGISTRY}/${{ github.repository_owner }}/${{ github.event.repository.name || github.repository }}:latest || true
