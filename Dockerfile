@@ -1,8 +1,7 @@
-# Multi-platform Docker image for Paper Search MCP Server
-FROM python:3.10-slim
+# Build stage: compile wheels and install build deps
+FROM python:3.12-slim AS builder
 
-# Install system dependencies needed for packages
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     build-essential \
     libxml2-dev \
     libxslt-dev \
@@ -10,27 +9,40 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+WORKDIR /build
 
-# Copy dependency files first for better caching
-COPY pyproject.toml ./
-COPY README.md ./
-
-# Install Python dependencies
-RUN pip install --upgrade pip \
-    && pip install --no-cache-dir .
-
-# Copy the application code
+# Copy project metadata and build wheels for deterministic install
+COPY pyproject.toml README.md ./
 COPY paper_search_mcp/ ./paper_search_mcp/
 
+RUN python -m pip install --upgrade pip build wheel setuptools && \
+    python -m build --wheel --outdir /wheels .
+
+# Runtime stage: minimal image with only runtime deps and package installed
+FROM python:3.12-slim AS runtime
+
+WORKDIR /app
+
+# Install runtime system packages only
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    libxml2 \
+    libxslt1.1 \
+    libssl1.1 \
+    libffi7 \
+    && rm -rf /var/lib/apt/lists/* || true
+
+# Copy wheel from builder and install without cache
+COPY --from=builder /wheels /wheels
+RUN python -m pip install --upgrade pip && \
+    pip install --no-cache-dir /wheels/*.whl
+
+# Copy only what we need (installed package is in site-packages)
 # Create non-root user for security
-RUN useradd --create-home --shell /bin/bash mcp \
-    && chown -R mcp:mcp /app
+RUN useradd --create-home --shell /bin/bash mcp || true
 
 USER mcp
 
 # Set environment variables
-ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
 # Health check to verify the server can start
